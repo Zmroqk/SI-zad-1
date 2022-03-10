@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>SI_zad_1</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Data\easy_cost.json" />
+    <None Remove="Data\easy_flow.json" />
+    <None Remove="Data\flat_cost.json" />
+    <None Remove="Data\flat_flow.json" />
+    <None Remove="Data\hard_cost.json" />
+    <None Remove="Data\hard_flow.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Data\easy_cost.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\easy_flow.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\flat_cost.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\flat_flow.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\hard_cost.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\hard_flow.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Data\easy_cost.json" />
+    <Resource Include="Data\easy_flow.json" />
+    <Resource Include="Data\flat_cost.json" />
+    <Resource Include="Data\flat_flow.json" />
+    <Resource Include="Data\hard_cost.json" />
+    <Resource Include="Data\hard_flow.json" />
+  </ItemGroup>
+
+</Project>
