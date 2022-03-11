@@ -2,8 +2,8 @@
 using SI_zad_1;
 using SI_zad_1.Models;
 
-List<StationCost>? stationsCost = Loader.LoadData<StationCost>("Data/easy_cost.json");
-List<StationFlow>? stationsFlow = Loader.LoadData<StationFlow>("Data/easy_flow.json");
+List<StationCost>? stationsCost = Loader.LoadData<StationCost>("Data/hard_cost.json");
+List<StationFlow>? stationsFlow = Loader.LoadData<StationFlow>("Data/hard_flow.json");
 if(stationsCost == null || stationsFlow == null)
 {
     Console.ForegroundColor = ConsoleColor.Red;
@@ -13,11 +13,14 @@ if(stationsCost == null || stationsFlow == null)
 else
 {
     LearningManager manager = new LearningManager(stationsCost, stationsFlow);
-    manager.Init(10, 3, 3, 9);
+    manager.Init(1000, 5, 6, 24);
     for(int i = 0; i < 100; i++)
     {
-        Console.WriteLine($"Epoch: {manager.Epoch} Results: {manager.ToString()}");
+        Console.WriteLine(manager.ToString(i));
         manager.Evolve(LearningManager.SelectionMethod.Roulette, selectionCount: 1);
     }
+    Console.ForegroundColor = ConsoleColor.Blue;
+    Console.WriteLine($"Best specimen cost: {manager.ToStringBestSpecimen()}");
+    Console.ForegroundColor = ConsoleColor.White;
 }
 

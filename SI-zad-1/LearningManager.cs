@@ -10,7 +10,9 @@ namespace SI_zad_1
     internal class LearningManager
     {
         public int Epoch { get; set; }
+        public Specimen? BestSpecimen { get; private set; }
         Specimen[] Specimens { get; set; }
+        List<(int epoch, Specimen? specimen)> BestSpecimens { get; set; } 
         List<StationCost> Costs { get; set; }
         List<StationFlow> Flows { get; set; }
 
@@ -19,6 +21,9 @@ namespace SI_zad_1
             Costs = costs;
             Flows = flows;
             Epoch = 1;
+            BestSpecimens = new List<(int epoch, Specimen? specimen)>();
+            Specimens = new Specimen[0];
+            BestSpecimen = null;
         }
 
         public void Init(int specimenCount, int w, int h, int n)
@@ -29,6 +34,7 @@ namespace SI_zad_1
                 Specimens[i] = new Specimen(w, h);
                 Specimens[i].GenerateRandomSpecimen(n);
             }
+            FindBestSpecimenInCurrentEpoch();
         }
 
         public void Evolve(SelectionMethod method, double crossoverProbability = 0.5d, double mutateProbability = 0.1d, int selectionCount = 5)
@@ -37,8 +43,9 @@ namespace SI_zad_1
                 method == SelectionMethod.Tournament ? TournamentSelection(selectionCount) : RouletteSelection();
             var crossoverSpecimens = Crossover(selectedSpecimens, crossoverProbability);
             var mutatedSpecimens = Mutate(crossoverSpecimens, mutateProbability);
-            Specimens = mutatedSpecimens.ToArray();
+            Specimens = mutatedSpecimens.ToArray();           
             Epoch++;
+            FindBestSpecimenInCurrentEpoch();
         }
 
         List<Specimen> TournamentSelection(int randomSelectionCount)
@@ -67,19 +74,35 @@ namespace SI_zad_1
             Random random = new Random();
             List<Specimen> result = new List<Specimen>();
             List<(Specimen specimen, int fittness)> specimensWithCost = Specimens.Select((sp) => (sp, sp.SpecimenCost(Costs, Flows))).ToList();
-            int specimensPoints = specimensWithCost.Sum(sp => sp.fittness);
-            double conversionRatio = 1d / specimensPoints;
+            int minValue = specimensWithCost.Min(sp => sp.fittness);
+            int maxValue = specimensWithCost.Max(sp => sp.fittness);
+            double weightConversion;
+            if (minValue != maxValue)
+            {
+                double sumNormalized = specimensWithCost.Sum(sp => 1.2 - ((double)sp.fittness - minValue) / (maxValue - minValue));
+                weightConversion = 1 / sumNormalized;
+            }
+            else
+            {
+                double sumNormalized = specimensWithCost.Sum(sp => sp.fittness);
+                weightConversion = 1 / sumNormalized;
+            }       
             List<(double start, double end, Specimen specimen)> weightedSpecimens = new List<(double start, double end, Specimen specimen)>();
             double currentWeight = 0d;
             foreach((Specimen specimen, int fittness) in specimensWithCost)
             {
-                weightedSpecimens.Add((currentWeight, currentWeight + fittness * conversionRatio, specimen));
-                currentWeight += fittness * conversionRatio;
+                double normalizationValue = 1.2 - ((double)fittness - minValue) / (maxValue - minValue);
+                weightedSpecimens.Add((currentWeight, currentWeight + (1.2 - ((double)fittness - minValue) / (maxValue - minValue)) * weightConversion, specimen));
+                currentWeight += (1 - ((double)fittness - minValue) / (maxValue - minValue)) * weightConversion;
             }
             for(int i = 0; i < weightedSpecimens.Count; i++)
             {
                 double value = random.NextDouble();
-                result.Add(weightedSpecimens.Find(wsp => wsp.start <= value && wsp.end > value).specimen);
+                Specimen specimen = weightedSpecimens.Find(wsp => wsp.start <= value && wsp.end > value).specimen;
+                if (specimen != null)
+                    result.Add(specimen);
+                else
+                    result.Add(weightedSpecimens[i].specimen);
             }
             return result;
         }
@@ -122,15 +145,36 @@ namespace SI_zad_1
                 {
                     Specimen mutatedSpecimen = new Specimen(selectedSpecimens[i]);
                     int mutateIndex = random.Next(mutatedSpecimen.Stations.Count);
-                    List<(int x, int y)> coords = mutatedSpecimen.Stations.Select(st => (st.coord.X, st.coord.Y)).ToList();
-                    (int x, int y) newCoords;
+                    List<Coordinates> coords = mutatedSpecimen.Stations.Select(st => st.coord).ToList();
+                    Coordinates newCoords; // TODO Wprowadzic podmiane dodatkowo do losowania nowego miejsca
+                    bool flag = false;
+                    int it = 0;
                     do
                     {
                         int position = random.Next(mutatedSpecimen.H * mutatedSpecimen.W);
-                        newCoords = (position / mutatedSpecimen.H, position % mutatedSpecimen.W);
+                        newCoords = new Coordinates(position / mutatedSpecimen.H, position % mutatedSpecimen.W);
+                        flag = coords.Contains(newCoords);
+                        it++;
                     }
-                    while (!coords.Contains(newCoords));
-                    mutatedSpecimen.Stations[mutateIndex] = (mutatedSpecimen.Stations[mutateIndex].index, new Coordinates(newCoords.x, newCoords.y));
+                    while (flag && it < 5);
+                    if (flag)
+                    {
+                        int firstStation = random.Next(mutatedSpecimen.Stations.Count);
+                        int secondStation;
+                        do
+                        {
+                            secondStation = random.Next(mutatedSpecimen.Stations.Count);
+                        } while (firstStation != secondStation);
+                        mutatedSpecimen.Stations[firstStation] = (
+                            mutatedSpecimen.Stations[secondStation].index,
+                            mutatedSpecimen.Stations[firstStation].coord
+                        );
+                        mutatedSpecimen.Stations[secondStation] = (
+                            mutatedSpecimen.Stations[firstStation].index,
+                            mutatedSpecimen.Stations[secondStation].coord
+                        );
+                    }
+                    mutatedSpecimen.Stations[mutateIndex] = (mutatedSpecimen.Stations[mutateIndex].index, new Coordinates(newCoords.X, newCoords.Y));
                     result.Add(mutatedSpecimen);
                 }
                 else
@@ -139,6 +183,20 @@ namespace SI_zad_1
                 }
             }
             return result;
+        }
+
+        void FindBestSpecimenInCurrentEpoch()
+        {
+            Specimen? bestSpecimen = Specimens.MinBy(sp => sp.SpecimenCost(Costs, Flows));
+            BestSpecimens.Add((Epoch, bestSpecimen));
+            if(BestSpecimen != null && bestSpecimen != null && BestSpecimen.SpecimenCost(Costs, Flows) > bestSpecimen.SpecimenCost(Costs, Flows))
+            {
+                BestSpecimen = bestSpecimen;
+            }
+            else if(BestSpecimen == null && bestSpecimen != null)
+            {
+                BestSpecimen = bestSpecimen;
+            }
         }
 
         void OnePointCrossover(Specimen first, Specimen second)
@@ -199,32 +257,50 @@ namespace SI_zad_1
             var duplicateCoords = coords.Where(pair => pair.Value >= 2).ToList();
             if (duplicateCoords.Count > 0)
             {
+                List<Coordinates> missingCoordinates = new List<Coordinates>();
+                for(int i = 0; i < specimen.W; i++)
+                {
+                    for(int j = 0; j < specimen.H; j++)
+                    {
+                        missingCoordinates.Add(new Coordinates(i, j));
+                    }
+                }
+                foreach(var coord in coords)
+                {
+                    missingCoordinates.Remove(coord.Key);
+                }             
                 foreach (var duplicate in duplicateCoords)
                 {
                     int replaceIndex = specimen.Stations.FindIndex(
                         st => st.coord.X == duplicate.Key.X && st.coord.Y == duplicate.Key.Y
                         );
-                    Coordinates newCoords;
-                    do
-                    {
-                        int position = random.Next(specimen.H * specimen.W);
-                        newCoords = new Coordinates(position / specimen.H, position % specimen.W);
-                    }
-                    while (!coords.ContainsKey(newCoords));
-                    specimen.Stations[replaceIndex] = (specimen.Stations[replaceIndex].index, new Coordinates(newCoords.X, newCoords.Y));
-                    coords.Add(newCoords, 1);
+                    int position = random.Next(missingCoordinates.Count);
+                    Coordinates newCoords = missingCoordinates[position];
+                    specimen.Stations[replaceIndex] = (specimen.Stations[replaceIndex].index, newCoords);
+                    missingCoordinates.RemoveAt(position);
                 }
             }
         }
 
         public override string ToString()
         {
-            int[] costs = new int[Specimens.Length];
-            for(int i = 0; i < costs.Length; i++)
+            StringBuilder stringBuilder = new StringBuilder();
+            foreach(var bestSpecimen in BestSpecimens)
             {
-                costs[i] = Specimens[i].SpecimenCost(Costs, Flows);
+                stringBuilder.AppendLine($"Epoch: {bestSpecimen.epoch} Best score: {bestSpecimen.specimen?.SpecimenCost(Costs, Flows)}");
             }
-            return $"[{string.Join(',', costs)}]";
+            return stringBuilder.ToString();
+        }
+
+        public string ToString(int epoch)
+        {
+            var bestInEpoch = BestSpecimens.Find(sp => sp.epoch == epoch);
+            return $"Epoch: {bestInEpoch.epoch} Best score: {bestInEpoch.specimen?.SpecimenCost(Costs, Flows)}";
+        }
+
+        public string ToStringBestSpecimen()
+        {
+            return $"Best specimen cost: {BestSpecimen?.SpecimenCost(Costs, Flows)}\nFull details: {BestSpecimen}";
         }
 
         internal enum SelectionMethod

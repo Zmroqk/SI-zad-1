@@ -31,5 +31,15 @@ namespace SI_zad_1.Models
         {
             return $"(X: {X} Y: {Y})";
         }
+
+        /// <summary>
+        /// Bijective algorithm HashCode
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode()
+        {
+            int tmp = (Y + ((X + 1) / 2));
+            return X + (tmp * tmp);
+        }
     }
 }
