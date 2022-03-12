@@ -11,8 +11,9 @@ namespace SI_zad_1
     {
         public int Epoch { get; set; }
         public Specimen? BestSpecimen { get; private set; }
-        Specimen[] Specimens { get; set; }
-        List<(int epoch, Specimen? specimen)> BestSpecimens { get; set; } 
+        public Specimen[] CurrentSpecimens { get; private set; }
+        public List<(int epoch, Specimen[] specimens)> SpecimensArchive { get; private set; }
+        public List<(int epoch, Specimen? specimen)> BestSpecimens { get; private set; } 
         List<StationCost> Costs { get; set; }
         List<StationFlow> Flows { get; set; }
 
@@ -22,19 +23,21 @@ namespace SI_zad_1
             Flows = flows;
             Epoch = 1;
             BestSpecimens = new List<(int epoch, Specimen? specimen)>();
-            Specimens = new Specimen[0];
+            SpecimensArchive = new List<(int epoch, Specimen[] specimens)>();
+            CurrentSpecimens = new Specimen[0];
             BestSpecimen = null;
         }
 
         public void Init(int specimenCount, int w, int h, int n)
         {
-            Specimens = new Specimen[specimenCount];
+            CurrentSpecimens = new Specimen[specimenCount];
             for (int i = 0; i < specimenCount; i++)
             {
-                Specimens[i] = new Specimen(w, h);
-                Specimens[i].GenerateRandomSpecimen(n);
+                CurrentSpecimens[i] = new Specimen(w, h);
+                CurrentSpecimens[i].GenerateRandomSpecimen(n);
             }
             FindBestSpecimenInCurrentEpoch();
+            SpecimensArchive.Add((Epoch, CurrentSpecimens));
         }
 
         public void Evolve(SelectionMethod method, double crossoverProbability = 0.5d, double mutateProbability = 0.1d, int selectionCount = 5)
@@ -43,8 +46,9 @@ namespace SI_zad_1
                 method == SelectionMethod.Tournament ? TournamentSelection(selectionCount) : RouletteSelection();
             var crossoverSpecimens = Crossover(selectedSpecimens, crossoverProbability);
             var mutatedSpecimens = Mutate(crossoverSpecimens, mutateProbability);
-            Specimens = mutatedSpecimens.ToArray();           
+            CurrentSpecimens = mutatedSpecimens.ToArray();           
             Epoch++;
+            SpecimensArchive.Add((Epoch, CurrentSpecimens));
             FindBestSpecimenInCurrentEpoch();
         }
 
@@ -52,16 +56,16 @@ namespace SI_zad_1
         {
             Random random = new Random();         
             List<Specimen> result = new List<Specimen>();
-            for(int i = 0; i < Specimens.Length; i++)
+            for(int i = 0; i < CurrentSpecimens.Length; i++)
             {
-                List<Specimen> specimensCopy = Specimens.ToList();
+                List<Specimen> specimensCopy = CurrentSpecimens.ToList();
                 List<Specimen> selected = new List<Specimen>();
                 for(int j = 0; j < randomSelectionCount; j++)
                 {
                     selected.Add(new Specimen(specimensCopy[random.Next(specimensCopy.Count)]));
                     specimensCopy.Remove(selected[j]);
                 }
-                List<Specimen> bestSpecimens = selected.OrderByDescending((sp) => { return sp.SpecimenCost(Costs, Flows); })
+                List<Specimen> bestSpecimens = selected.OrderBy((sp) => { return sp.SpecimenCost(Costs, Flows); })
                     .Take(1)
                     .ToList();
                 result.AddRange(bestSpecimens);
@@ -73,7 +77,7 @@ namespace SI_zad_1
         {
             Random random = new Random();
             List<Specimen> result = new List<Specimen>();
-            List<(Specimen specimen, int fittness)> specimensWithCost = Specimens.Select((sp) => (sp, sp.SpecimenCost(Costs, Flows))).ToList();
+            List<(Specimen specimen, int fittness)> specimensWithCost = CurrentSpecimens.Select((sp) => (sp, sp.SpecimenCost(Costs, Flows))).ToList();
             int minValue = specimensWithCost.Min(sp => sp.fittness);
             int maxValue = specimensWithCost.Max(sp => sp.fittness);
             double weightConversion;
@@ -187,7 +191,7 @@ namespace SI_zad_1
 
         void FindBestSpecimenInCurrentEpoch()
         {
-            Specimen? bestSpecimen = Specimens.MinBy(sp => sp.SpecimenCost(Costs, Flows));
+            Specimen? bestSpecimen = CurrentSpecimens.MinBy(sp => sp.SpecimenCost(Costs, Flows));
             BestSpecimens.Add((Epoch, bestSpecimen));
             if(BestSpecimen != null && bestSpecimen != null && BestSpecimen.SpecimenCost(Costs, Flows) > bestSpecimen.SpecimenCost(Costs, Flows))
             {
