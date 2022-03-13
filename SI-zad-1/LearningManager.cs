@@ -44,7 +44,7 @@ namespace SI_zad_1
         {
             var selectedSpecimens =
                 method == SelectionMethod.Tournament ? TournamentSelection(selectionCount) : RouletteSelection();
-            var crossoverSpecimens = Crossover(selectedSpecimens, crossoverProbability);
+            var crossoverSpecimens = Crossover(selectedSpecimens, crossoverProbability);     
             var mutatedSpecimens = Mutate(crossoverSpecimens, mutateProbability);
             CurrentSpecimens = mutatedSpecimens.ToArray();           
             Epoch++;
@@ -150,7 +150,7 @@ namespace SI_zad_1
                     Specimen mutatedSpecimen = new Specimen(selectedSpecimens[i]);
                     int mutateIndex = random.Next(mutatedSpecimen.Stations.Count);
                     List<Coordinates> coords = mutatedSpecimen.Stations.Select(st => st.coord).ToList();
-                    Coordinates newCoords; // TODO Wprowadzic podmiane dodatkowo do losowania nowego miejsca
+                    Coordinates newCoords;
                     bool flag = false;
                     int it = 0;
                     do
@@ -168,7 +168,7 @@ namespace SI_zad_1
                         do
                         {
                             secondStation = random.Next(mutatedSpecimen.Stations.Count);
-                        } while (firstStation != secondStation);
+                        } while (firstStation == secondStation);
                         mutatedSpecimen.Stations[firstStation] = (
                             mutatedSpecimen.Stations[secondStation].index,
                             mutatedSpecimen.Stations[firstStation].coord
@@ -178,7 +178,8 @@ namespace SI_zad_1
                             mutatedSpecimen.Stations[secondStation].coord
                         );
                     }
-                    mutatedSpecimen.Stations[mutateIndex] = (mutatedSpecimen.Stations[mutateIndex].index, new Coordinates(newCoords.X, newCoords.Y));
+                    else
+                        mutatedSpecimen.Stations[mutateIndex] = (mutatedSpecimen.Stations[mutateIndex].index, new Coordinates(newCoords.X, newCoords.Y));             
                     result.Add(mutatedSpecimen);
                 }
                 else
@@ -219,7 +220,7 @@ namespace SI_zad_1
             second.Stations.AddRange(secondRestStations);
 
             FixSpecimen(first);
-            FixSpecimen(second);    
+            FixSpecimen(second);
         }
 
         void FixSpecimen(Specimen specimen)
@@ -275,13 +276,16 @@ namespace SI_zad_1
                 }             
                 foreach (var duplicate in duplicateCoords)
                 {
-                    int replaceIndex = specimen.Stations.FindIndex(
-                        st => st.coord.X == duplicate.Key.X && st.coord.Y == duplicate.Key.Y
-                        );
-                    int position = random.Next(missingCoordinates.Count);
-                    Coordinates newCoords = missingCoordinates[position];
-                    specimen.Stations[replaceIndex] = (specimen.Stations[replaceIndex].index, newCoords);
-                    missingCoordinates.RemoveAt(position);
+                    for(int i = 0; i < duplicate.Value-1; i++)
+                    {
+                        int replaceIndex = specimen.Stations.FindIndex(
+                            st => st.coord.X == duplicate.Key.X && st.coord.Y == duplicate.Key.Y
+                            );
+                        int position = random.Next(missingCoordinates.Count);
+                        Coordinates newCoords = missingCoordinates[position];
+                        specimen.Stations[replaceIndex] = (specimen.Stations[replaceIndex].index, newCoords);
+                        missingCoordinates.RemoveAt(position);
+                    }
                 }
             }
         }

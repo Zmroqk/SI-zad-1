@@ -169,7 +169,7 @@ Test("easy", 3, 3, 9,
     new List<int>() { 10, 50, 100 },
     new List<double>() { 0.2d, 0.4d },
     new List<double>() { 0.1d, 0.2d },
-    new List<int>() { 1, 2, 3, 4 },
+    new List<int>() { 1, 3, 5 },
     new List<LearningManager.SelectionMethod>() {
         LearningManager.SelectionMethod.Roulette
     },
@@ -181,7 +181,7 @@ Test("easy", 3, 3, 9,
     new List<int>() { 10, 50, 100 },
     new List<double>() { 0.2d, 0.4d },
     new List<double>() { 0.1d, 0.2d },
-    new List<int>() { 1, 2, 3, 4 },
+    new List<int>() { 1, 3, 5 },
     new List<LearningManager.SelectionMethod>() {
         LearningManager.SelectionMethod.Roulette
     },
@@ -193,11 +193,11 @@ Test("easy", 3, 3, 9,
     new List<int>() { 10, 50, 100 },
     new List<double>() { 0.4d },
     new List<double>() { 0.1d },
-    new List<int>() { 1, 2, 3, 4 },
+    new List<int>() { 1, 3, 5 },
     new List<LearningManager.SelectionMethod>() {
         LearningManager.SelectionMethod.Tournament
     },
-    "epochs_10_specimens_10-50-100_crossover_4d_mutate_1d_tournament",
+    "epochs_10_specimens_10-50-100_crossover_4d_mutate_1d_selection_1-3-5_tournament",
     true
 );
 Test("easy", 3, 3, 9,
@@ -205,11 +205,63 @@ Test("easy", 3, 3, 9,
     new List<int>() { 10, 50, 100 },
     new List<double>() { 0.4d },
     new List<double>() { 0.1d },
-    new List<int>() { 1, 2, 3, 4 },
+    new List<int>() { 1, 5, 10 },
     new List<LearningManager.SelectionMethod>() {
         LearningManager.SelectionMethod.Tournament
     },
-    "epochs_100_specimens_10-50-100_crossover_4d_mutate_1d_tournament",
+    "epochs_100_specimens_10-50-100_crossover_4d_mutate_1d_selection_1-5-10_tournament",
+    true
+);
+
+Test("easy", 3, 3, 9,
+    new List<int>() { 100 },
+    new List<int>() { 100 },
+    new List<double>() { 0.2d, 0.4d, 0.6d },
+    new List<double>() { 0.1d },
+    new List<int>() { 5 },
+    new List<LearningManager.SelectionMethod>() {
+        LearningManager.SelectionMethod.Tournament
+    },
+    "epochs_100_specimens_100_crossover_2d-4d-6d_mutate_1d_selection_5_tournament",
+    true
+);
+
+Test("easy", 3, 3, 9,
+    new List<int>() { 100 },
+    new List<int>() { 100 },
+    new List<double>() { 0.2d, 0.4d, 0.6d },
+    new List<double>() { 0.1d },
+    new List<int>() { 4 },
+    new List<LearningManager.SelectionMethod>() {
+        LearningManager.SelectionMethod.Roulette
+    },
+    "epochs_100_specimens_10-50-100_crossover_4d_mutate_1d_roulette",
+    true
+);
+
+Test("easy", 3, 3, 9,
+    new List<int>() { 100 },
+    new List<int>() { 100 },
+    new List<double>() { 0.4d },
+    new List<double>() { 0.1d, 0.2d, 0.3d },
+    new List<int>() { 5 },
+    new List<LearningManager.SelectionMethod>() {
+        LearningManager.SelectionMethod.Tournament
+    },
+    "epochs_100_specimens_100_crossover_4d_mutate_1d-2d-3d_selection_5_tournament",
+    true
+);
+
+Test("easy", 3, 3, 9,
+    new List<int>() { 100 },
+    new List<int>() { 100 },
+    new List<double>() { 0.4d },
+    new List<double>() { 0.1d, 0.2d, 0.3d },
+    new List<int>() { 4 },
+    new List<LearningManager.SelectionMethod>() {
+        LearningManager.SelectionMethod.Roulette
+    },
+    "epochs_100_specimens_10-50-100_crossover_4d_mutate_1d-2d-3d_roulette",
     true
 );
 
@@ -218,12 +270,12 @@ Test("easy", 3, 3, 9,
     new List<int>() { 10, 25, 50, 100 },
     new List<double>() { 0.2d, 0.4d, 0.6d },
     new List<double>() { 0.1d, 0.2d, 0.3d },
-    new List<int>() { 1, 2, 3, 4 },
+    new List<int>() { 1, 5, 10 },
     new List<LearningManager.SelectionMethod>() {
         LearningManager.SelectionMethod.Tournament,
         LearningManager.SelectionMethod.Roulette
     },
-    "epochs_10-20-30-50-100_specimens_10-25-50-100_crossover_2d-4d-6d_mutate_1d-2d-3d_selection_1-2-3-4_tournament-roulette",
+    "epochs_10-20-30-50-100_specimens_10-25-50-100_crossover_2d-4d-6d_mutate_1d-2d-3d_selection_1-5-10_tournament-roulette",
     false
 );
 # endregion Easy
@@ -298,7 +350,7 @@ Test("hard", 5, 6, 24,
     new List<int>() { 10, 50, 100 },
     new List<double>() { 0.2d, 0.4d },
     new List<double>() { 0.1d, 0.2d },
-    new List<int>() { 1, 2, 3, 4 },
+    new List<int>() { 1, 3, 5 },
     new List<LearningManager.SelectionMethod>() {
         LearningManager.SelectionMethod.Roulette
     },
@@ -310,7 +362,7 @@ Test("hard", 5, 6, 24,
     new List<int>() { 10, 50, 100 },
     new List<double>() { 0.2d, 0.4d },
     new List<double>() { 0.1d, 0.2d },
-    new List<int>() { 1, 2, 3, 4 },
+    new List<int>() { 1, 10, 25 },
     new List<LearningManager.SelectionMethod>() {
         LearningManager.SelectionMethod.Roulette
     },
@@ -322,11 +374,11 @@ Test("hard", 5, 6, 24,
     new List<int>() { 10, 50, 100 },
     new List<double>() { 0.4d },
     new List<double>() { 0.1d },
-    new List<int>() { 1, 2, 3, 4 },
+    new List<int>() { 1, 5, 10 },
     new List<LearningManager.SelectionMethod>() {
         LearningManager.SelectionMethod.Tournament
     },
-    "epochs_10_specimens_10-50-100_crossover_4d_mutate_1d_tournament",
+    "epochs_10_specimens_10-50-100_crossover_4d_mutate_1d_selection_1-5-10_tournament",
     true
 );
 Test("hard", 5, 6, 24,
@@ -334,11 +386,63 @@ Test("hard", 5, 6, 24,
     new List<int>() { 10, 50, 100 },
     new List<double>() { 0.4d },
     new List<double>() { 0.1d },
-    new List<int>() { 1, 2, 3, 4 },
+    new List<int>() { 1, 5, 10 },
     new List<LearningManager.SelectionMethod>() {
         LearningManager.SelectionMethod.Tournament
     },
-    "epochs_100_specimens_10-50-100_crossover_4d_mutate_1d_tournament",
+    "epochs_100_specimens_10-50-100_crossover_4d_mutate_1d_selection_1-5-10_tournament",
+    true
+);
+
+Test("hard", 5, 6, 24,
+    new List<int>() { 100 },
+    new List<int>() { 100 },
+    new List<double>() { 0.2d, 0.4d, 0.6d },
+    new List<double>() { 0.1d },
+    new List<int>() { 5 },
+    new List<LearningManager.SelectionMethod>() {
+        LearningManager.SelectionMethod.Tournament
+    },
+    "epochs_100_specimens_10-50-100_crossover_4d_mutate_1d_selection_5_tournament",
+    true
+);
+
+Test("hard", 5, 6, 24,
+    new List<int>() { 100 },
+    new List<int>() { 100 },
+    new List<double>() { 0.2d, 0.4d, 0.6d },
+    new List<double>() { 0.1d },
+    new List<int>() { 10 },
+    new List<LearningManager.SelectionMethod>() {
+        LearningManager.SelectionMethod.Roulette
+    },
+    "epochs_100_specimens_10-50-100_crossover_4d_mutate_1d_roulette",
+    true
+);
+
+Test("hard", 5, 6, 24,
+    new List<int>() { 100 },
+    new List<int>() { 100 },
+    new List<double>() { 0.4d },
+    new List<double>() { 0.1d, 0.2d, 0.3d },
+    new List<int>() { 5 },
+    new List<LearningManager.SelectionMethod>() {
+        LearningManager.SelectionMethod.Tournament
+    },
+    "epochs_100_specimens_100_crossover_4d_mutate_1d-2d-3d_selection_5_tournament",
+    true
+);
+
+Test("hard", 5, 6, 24,
+    new List<int>() { 100 },
+    new List<int>() { 100 },
+    new List<double>() { 0.4d },
+    new List<double>() { 0.1d, 0.2d, 0.3d },
+    new List<int>() { 5 },
+    new List<LearningManager.SelectionMethod>() {
+        LearningManager.SelectionMethod.Roulette
+    },
+    "epochs_100_specimens_10-50-100_crossover_4d_mutate_1d-2d-3d_roulette",
     true
 );
 
@@ -347,12 +451,12 @@ Test("hard", 5, 6, 24,
     new List<int>() { 10, 25, 50, 100 },
     new List<double>() { 0.2d, 0.4d, 0.6d },
     new List<double>() { 0.1d, 0.2d, 0.3d },
-    new List<int>() { 1, 2, 3, 4 },
+    new List<int>() { 1, 5, 10 },
     new List<LearningManager.SelectionMethod>() {
         LearningManager.SelectionMethod.Tournament,
         LearningManager.SelectionMethod.Roulette
     },
-    "epochs_10-20-30-50-100_specimens_10-25-50-100_crossover_2d-4d-6d_mutate_1d-2d-3d_selection_1-2-3-4_tournament-roulette",
+    "epochs_10-20-30-50-100_specimens_10-25-50-100_crossover_2d-4d-6d_mutate_1d-2d-3d_selection_1-5-10_tournament-roulette",
     false
 );
 

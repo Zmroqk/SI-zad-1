@@ -46,9 +46,9 @@ namespace SI_zad_1.Models
                     i++;
                 }
             }
-            for(int j = 1; j <= positionsTaken.Count; j++)
+            for(int j = 0; j < positionsTaken.Count; j++)
             {
-                Stations.Add((j, new Coordinates(positionsTaken[j - 1] / H, positionsTaken[j - 1] % H)));
+                Stations.Add((j, new Coordinates(positionsTaken[j] / H, positionsTaken[j] % H)));
             }
         }
 
@@ -57,7 +57,7 @@ namespace SI_zad_1.Models
             if(Cost == null)
             {
                 int fitness = 0;
-                int stationIndex = 1;
+                int stationIndex = 0;
                 foreach ((int index, Coordinates coord) station in Stations)
                 {
                     List<StationCost> costs = stationCosts.FindAll((sCost) => sCost.Source == stationIndex);
