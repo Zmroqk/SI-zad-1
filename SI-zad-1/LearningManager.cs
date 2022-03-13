@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SI_zad_1.Components;
 
 namespace SI_zad_1
 {
@@ -14,10 +15,13 @@ namespace SI_zad_1
         public Specimen[] CurrentSpecimens { get; private set; }
         public List<(int epoch, Specimen[] specimens)> SpecimensArchive { get; private set; }
         public List<(int epoch, Specimen? specimen)> BestSpecimens { get; private set; } 
-        List<StationCost> Costs { get; set; }
-        List<StationFlow> Flows { get; set; }
+        List<StationCost> Costs { get; }
+        List<StationFlow> Flows { get; }
+        ISelector Selector { get; }
+        IMutator Mutator { get; }
+        ICrossover Crossover { get; }
 
-        public LearningManager(List<StationCost> costs, List<StationFlow> flows)
+        public LearningManager(List<StationCost> costs, List<StationFlow> flows, ISelector selector, IMutator mutator, ICrossover crossover)
         {
             Costs = costs;
             Flows = flows;
@@ -26,6 +30,9 @@ namespace SI_zad_1
             SpecimensArchive = new List<(int epoch, Specimen[] specimens)>();
             CurrentSpecimens = new Specimen[0];
             BestSpecimen = null;
+            Selector = selector;
+            Mutator = mutator;
+            Crossover = crossover;
         }
 
         public void Init(int specimenCount, int w, int h, int n)
@@ -40,154 +47,30 @@ namespace SI_zad_1
             SpecimensArchive.Add((Epoch, CurrentSpecimens));
         }
 
-        public void Evolve(SelectionMethod method, double crossoverProbability = 0.5d, double mutateProbability = 0.1d, int selectionCount = 5)
+        public void Evolve(
+            double crossoverProbability = 0.5d, 
+            double mutateProbability = 0.1d, 
+            int elitizmCount = 5, 
+            bool useElitizm = false)
         {
-            var selectedSpecimens =
-                method == SelectionMethod.Tournament ? TournamentSelection(selectionCount) : RouletteSelection();
-            var crossoverSpecimens = Crossover(selectedSpecimens, crossoverProbability);     
-            var mutatedSpecimens = Mutate(crossoverSpecimens, mutateProbability);
-            CurrentSpecimens = mutatedSpecimens.ToArray();           
+            List<Specimen> bestSpecimens = new List<Specimen>();
+            if (useElitizm)
+            {
+                bestSpecimens = CurrentSpecimens.OrderBy(sp => sp.SpecimenCost(Costs, Flows)).Take(elitizmCount).ToList();
+            }
+            var selectedSpecimens = Selector.Select(CurrentSpecimens.ToList());
+            var crossoverSpecimens = Crossover.Crossover(selectedSpecimens, crossoverProbability);     
+            var mutatedSpecimens = Mutator.Mutate(crossoverSpecimens, mutateProbability);
+            var newSpecimens = mutatedSpecimens;
+            if(useElitizm)
+            {
+                newSpecimens = newSpecimens.OrderByDescending(sp => sp.SpecimenCost(Costs, Flows)).Skip(elitizmCount).ToList();
+                newSpecimens.AddRange(bestSpecimens);
+            }
+            CurrentSpecimens = newSpecimens.ToArray();           
             Epoch++;
             SpecimensArchive.Add((Epoch, CurrentSpecimens));
             FindBestSpecimenInCurrentEpoch();
-        }
-
-        List<Specimen> TournamentSelection(int randomSelectionCount)
-        {
-            Random random = new Random();         
-            List<Specimen> result = new List<Specimen>();
-            for(int i = 0; i < CurrentSpecimens.Length; i++)
-            {
-                List<Specimen> specimensCopy = CurrentSpecimens.ToList();
-                List<Specimen> selected = new List<Specimen>();
-                for(int j = 0; j < randomSelectionCount; j++)
-                {
-                    selected.Add(new Specimen(specimensCopy[random.Next(specimensCopy.Count)]));
-                    specimensCopy.Remove(selected[j]);
-                }
-                List<Specimen> bestSpecimens = selected.OrderBy((sp) => { return sp.SpecimenCost(Costs, Flows); })
-                    .Take(1)
-                    .ToList();
-                result.AddRange(bestSpecimens);
-            }
-            return result;
-        }
-
-        List<Specimen> RouletteSelection()
-        {
-            Random random = new Random();
-            List<Specimen> result = new List<Specimen>();
-            List<(Specimen specimen, int fittness)> specimensWithCost = CurrentSpecimens.Select((sp) => (sp, sp.SpecimenCost(Costs, Flows))).ToList();
-            int minValue = specimensWithCost.Min(sp => sp.fittness);
-            int maxValue = specimensWithCost.Max(sp => sp.fittness);
-            double weightConversion;
-            if (minValue != maxValue)
-            {
-                double sumNormalized = specimensWithCost.Sum(sp => 1.2 - ((double)sp.fittness - minValue) / (maxValue - minValue));
-                weightConversion = 1 / sumNormalized;
-            }
-            else
-            {
-                double sumNormalized = specimensWithCost.Sum(sp => sp.fittness);
-                weightConversion = 1 / sumNormalized;
-            }       
-            List<(double start, double end, Specimen specimen)> weightedSpecimens = new List<(double start, double end, Specimen specimen)>();
-            double currentWeight = 0d;
-            foreach((Specimen specimen, int fittness) in specimensWithCost)
-            {
-                double normalizationValue = 1.2 - ((double)fittness - minValue) / (maxValue - minValue);
-                weightedSpecimens.Add((currentWeight, currentWeight + (1.2 - ((double)fittness - minValue) / (maxValue - minValue)) * weightConversion, specimen));
-                currentWeight += (1 - ((double)fittness - minValue) / (maxValue - minValue)) * weightConversion;
-            }
-            for(int i = 0; i < weightedSpecimens.Count; i++)
-            {
-                double value = random.NextDouble();
-                Specimen specimen = weightedSpecimens.Find(wsp => wsp.start <= value && wsp.end > value).specimen;
-                if (specimen != null)
-                    result.Add(specimen);
-                else
-                    result.Add(weightedSpecimens[i].specimen);
-            }
-            return result;
-        }
-
-        List<Specimen> Crossover(List<Specimen> selectedSpecimens, double probability = 0.5d)
-        {
-            Random random = new Random();
-            List<Specimen> result = new List<Specimen>();
-            for(int i = 0; i < selectedSpecimens.Count; i++)
-            {
-                if(random.NextDouble() <= probability)
-                {
-                    int secondSpecimenIndex = i + 1;
-                    if(secondSpecimenIndex >= selectedSpecimens.Count)
-                    {
-                        secondSpecimenIndex = random.Next(selectedSpecimens.Count);
-                    }
-                    Specimen first = new Specimen(selectedSpecimens[i++]);
-                    Specimen second = new Specimen(selectedSpecimens[secondSpecimenIndex]);
-                    OnePointCrossover(first, second);
-                    result.Add(first);
-                    if(result.Count < selectedSpecimens.Count)
-                        result.Add(second);
-                }
-                else
-                {
-                    result.Add(new Specimen(selectedSpecimens[i]));
-                }
-            }
-            return result;
-        }
-
-        List<Specimen> Mutate(List<Specimen> selectedSpecimens, double probability = 0.1d)
-        {
-            Random random = new Random();
-            List<Specimen> result = new List<Specimen>();
-            for(int i = 0; i < selectedSpecimens.Count; i++)
-            {
-                if(random.NextDouble() <= probability)
-                {
-                    Specimen mutatedSpecimen = new Specimen(selectedSpecimens[i]);
-                    int mutateIndex = random.Next(mutatedSpecimen.Stations.Count);
-                    List<Coordinates> coords = mutatedSpecimen.Stations.Select(st => st.coord).ToList();
-                    Coordinates newCoords;
-                    bool flag = false;
-                    int it = 0;
-                    do
-                    {
-                        int position = random.Next(mutatedSpecimen.H * mutatedSpecimen.W);
-                        newCoords = new Coordinates(position / mutatedSpecimen.H, position % mutatedSpecimen.W);
-                        flag = coords.Contains(newCoords);
-                        it++;
-                    }
-                    while (flag && it < 5);
-                    if (flag)
-                    {
-                        int firstStation = random.Next(mutatedSpecimen.Stations.Count);
-                        int secondStation;
-                        do
-                        {
-                            secondStation = random.Next(mutatedSpecimen.Stations.Count);
-                        } while (firstStation == secondStation);
-                        mutatedSpecimen.Stations[firstStation] = (
-                            mutatedSpecimen.Stations[secondStation].index,
-                            mutatedSpecimen.Stations[firstStation].coord
-                        );
-                        mutatedSpecimen.Stations[secondStation] = (
-                            mutatedSpecimen.Stations[firstStation].index,
-                            mutatedSpecimen.Stations[secondStation].coord
-                        );
-                    }
-                    else
-                        mutatedSpecimen.Stations[mutateIndex] = (mutatedSpecimen.Stations[mutateIndex].index, new Coordinates(newCoords.X, newCoords.Y));             
-                    result.Add(mutatedSpecimen);
-                }
-                else
-                {
-                    result.Add(new Specimen(selectedSpecimens[i]));
-                }
-            }
-            return result;
         }
 
         void FindBestSpecimenInCurrentEpoch()
@@ -201,92 +84,6 @@ namespace SI_zad_1
             else if(BestSpecimen == null && bestSpecimen != null)
             {
                 BestSpecimen = bestSpecimen;
-            }
-        }
-
-        void OnePointCrossover(Specimen first, Specimen second)
-        {
-            Random random = new Random();
-            int splitIndex = random.Next(first.Stations.Count);
-            List<(int, Coordinates)> firstStations = first.Stations.Take(splitIndex + 1).ToList();
-            List<(int, Coordinates)> firstRestStations = first.Stations.TakeLast(first.Stations.Count - splitIndex - 1).ToList();
-            List<(int, Coordinates)> secondStations = second.Stations.Take(splitIndex + 1).ToList();
-            List<(int, Coordinates)> secondRestStations = second.Stations.TakeLast(first.Stations.Count - splitIndex - 1).ToList();
-            first.Stations.Clear();
-            second.Stations.Clear();
-            first.Stations.AddRange(secondStations);
-            first.Stations.AddRange(firstRestStations);
-            second.Stations.AddRange(firstStations);
-            second.Stations.AddRange(secondRestStations);
-
-            FixSpecimen(first);
-            FixSpecimen(second);
-        }
-
-        void FixSpecimen(Specimen specimen)
-        {
-            Random random = new Random();
-            Dictionary<int, int> indexes = new Dictionary<int, int>();
-            Dictionary<Coordinates, int> coords = new Dictionary<Coordinates, int>();
-            for (int i = 0; i < specimen.Stations.Count; i++)
-            {
-                if (!indexes.ContainsKey(i))
-                    indexes.Add(i, 0);
-                (int index, Coordinates coord) = specimen.Stations[i];
-                if (!indexes.ContainsKey(index))
-                    indexes.Add(index, 1);
-                else
-                    indexes[index]++;
-                if (!coords.ContainsKey(new Coordinates(coord.X, coord.Y)))
-                    coords.Add(new Coordinates(coord.X, coord.Y), 1);
-                else
-                    coords[new Coordinates(coord.X, coord.Y)]++;
-            }
-            var duplicateIndexes = indexes.Where(pair => pair.Value >= 2).ToList();
-            if (duplicateIndexes.Count > 0)
-            {
-                var missingIndexes = indexes.Where(pair => pair.Value == 0).ToList();
-                foreach (var duplicate in duplicateIndexes)
-                {
-                    int replaceIndex = specimen.Stations.FindIndex(st => st.index == duplicate.Key);
-                    specimen.Stations[replaceIndex] = (
-                        missingIndexes[0].Key,
-                        new Coordinates(
-                            specimen.Stations[replaceIndex].coord.X,
-                            specimen.Stations[replaceIndex].coord.Y
-                            )
-                        );
-                    missingIndexes.RemoveAt(0);
-                }
-            }
-            var duplicateCoords = coords.Where(pair => pair.Value >= 2).ToList();
-            if (duplicateCoords.Count > 0)
-            {
-                List<Coordinates> missingCoordinates = new List<Coordinates>();
-                for(int i = 0; i < specimen.W; i++)
-                {
-                    for(int j = 0; j < specimen.H; j++)
-                    {
-                        missingCoordinates.Add(new Coordinates(i, j));
-                    }
-                }
-                foreach(var coord in coords)
-                {
-                    missingCoordinates.Remove(coord.Key);
-                }             
-                foreach (var duplicate in duplicateCoords)
-                {
-                    for(int i = 0; i < duplicate.Value-1; i++)
-                    {
-                        int replaceIndex = specimen.Stations.FindIndex(
-                            st => st.coord.X == duplicate.Key.X && st.coord.Y == duplicate.Key.Y
-                            );
-                        int position = random.Next(missingCoordinates.Count);
-                        Coordinates newCoords = missingCoordinates[position];
-                        specimen.Stations[replaceIndex] = (specimen.Stations[replaceIndex].index, newCoords);
-                        missingCoordinates.RemoveAt(position);
-                    }
-                }
             }
         }
 
