@@ -49,9 +49,9 @@ namespace SI_zad_1.Components
                 double value = random.NextDouble();
                 Specimen specimen = weightedSpecimens.Find(wsp => wsp.start <= value && wsp.end > value).specimen;
                 if (specimen != null)
-                    result.Add(specimen);
+                    result.Add(new Specimen(specimen));
                 else
-                    result.Add(weightedSpecimens[i].specimen);
+                    result.Add(new Specimen(weightedSpecimens[i].specimen));
             }
             return result;
         }
