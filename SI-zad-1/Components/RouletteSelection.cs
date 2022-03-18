@@ -41,8 +41,16 @@ namespace SI_zad_1.Components
             foreach ((Specimen specimen, int fittness) in specimensWithCost)
             {
                 double normalizationValue = 1.2 - ((double)fittness - minValue) / (maxValue - minValue);
-                weightedSpecimens.Add((currentWeight, currentWeight + (1.2 - ((double)fittness - minValue) / (maxValue - minValue)) * weightConversion, specimen));
-                currentWeight += (1 - ((double)fittness - minValue) / (maxValue - minValue)) * weightConversion;
+                if(normalizationValue == double.NaN)
+                {
+                    weightedSpecimens.Add((currentWeight, currentWeight + weightConversion, specimen));
+                    currentWeight += weightConversion;
+                }
+                else
+                {
+                    weightedSpecimens.Add((currentWeight, currentWeight + normalizationValue * weightConversion, specimen));
+                    currentWeight += normalizationValue * weightConversion;
+                }
             }
             for (int i = 0; i < weightedSpecimens.Count; i++)
             {
